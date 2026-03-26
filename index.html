@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consultoria I.A. — Winner.AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0a0f0a;
+    --surface: #111711;
+    --border: #1e2b1e;
+    --green: #7fff4f;
+    --green-dim: #4db82e;
+    --text: #e8f0e8;
+    --muted: #6b7f6b;
+    --error: #ff5f5f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(127,255,79,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 10% 80%, rgba(127,255,79,0.03) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 60px 24px 100px;
+  }
+
+  .header {
+    margin-bottom: 64px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { color: var(--green); }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 480px;
+  }
+
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: var(--green);
+    transition: width 0.4s ease;
+    z-index: 100;
+    box-shadow: 0 0 12px var(--green);
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 48px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.2s forwards;
+  }
+
+  .progress-steps { display: flex; gap: 4px; }
+
+  .step-dot {
+    width: 20px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background 0.3s ease;
+  }
+
+  .step-dot.active { background: var(--green); }
+  .step-dot.done { background: var(--green-dim); }
+
+  .block {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .block.active {
+    display: block;
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .block-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+
+  .block-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(18px, 3vw, 24px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 32px;
+    letter-spacing: -0.01em;
+  }
+
+  .question { margin-bottom: 32px; }
+
+  .question label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .question label .num {
+    color: var(--green);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    margin-right: 6px;
+  }
+
+  input[type="text"],
+  input[type="tel"],
+  textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  input[type="text"]:focus,
+  input[type="tel"]:focus,
+  textarea:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(127,255,79,0.08);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 8px; }
+
+  .options.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .option-item { position: relative; }
+
+  .option-item input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .option-item label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 400;
+    margin-bottom: 0;
+    line-height: 1.4;
+  }
+
+  .option-item label::before {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .option-item input[type="checkbox"] + label::before { border-radius: 4px; }
+
+  .option-item input:checked + label {
+    border-color: var(--green);
+    background: rgba(127,255,79,0.05);
+  }
+
+  .option-item input:checked + label::before {
+    background: var(--green);
+    border-color: var(--green);
+    box-shadow: 0 0 6px rgba(127,255,79,0.4);
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 40px;
+    align-items: center;
+  }
+
+  .btn-next {
+    background: var(--green);
+    color: #0a0f0a;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-next:hover {
+    background: #9fff70;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(127,255,79,0.25);
+  }
+
+  .btn-next:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-back {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-back:hover {
+    color: var(--text);
+    border-color: var(--muted);
+  }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--error);
+    margin-top: 6px;
+    display: none;
+  }
+
+  .field-error.show { display: block; }
+
+  .submit-error {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--error);
+    display: none;
+  }
+
+  .submit-error.show { display: block; }
+
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 0;
+    opacity: 0;
+  }
+
+  .success-screen.show {
+    display: block;
+    animation: fadeUp 0.6s ease forwards;
+  }
+
+  .success-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba(127,255,79,0.1);
+    border: 1px solid var(--green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 28px;
+  }
+
+  .success-screen h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+  }
+
+  .success-screen p {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 480px) {
+    .options.grid { grid-template-columns: 1fr; }
+    .wrapper { padding: 40px 16px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar" style="width: 0%"></div>
+
+<div class="wrapper">
+
+  <div class="header">
+    <div class="logo">Winner.AI</div>
+    <h1>Vamos começar sua<br><span>consultoria de I.A.</span></h1>
+    <p class="subtitle">Responda com sinceridade — quanto mais você compartilhar, mais personalizada e efetiva será nossa jornada juntos.</p>
+  </div>
+
+  <div class="progress-info" id="progressInfo">
+    <div class="progress-steps" id="progressSteps"></div>
+    <span id="progressText">Bloco 1 de 4</span>
+  </div>
+
+  <!-- BLOCO 1 -->
+  <div class="block active" id="block-0">
+    <div class="block-label">Bloco 01</div>
+    <div class="block-title">Quem é você?</div>
+
+    <div class="question">
+      <label><span class="num">01</span> Qual é o seu nome completo?</label>
+      <input type="text" id="q1" placeholder="Seu nome" />
+      <div class="field-error" id="err-q1">Preencha seu nome</div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">02</span> Qual é o seu WhatsApp?</label>
+      <input type="tel" id="q2" placeholder="(00) 00000-0000" />
+      <div class="field-error" id="err-q2">Preencha seu WhatsApp</div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">03</span> Qual é o seu segmento de atuação?</label>
+      <input type="text" id="q3" placeholder="Ex: clínica médica, advocacia, comércio..." />
+      <div class="field-error" id="err-q3">Preencha seu segmento</div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">04</span> Qual é o seu papel no negócio?</label>
+      <div class="options">
+        <div class="option-item"><input type="radio" name="q4" id="q4a" value="Dono / Fundador"><label for="q4a">Dono / Fundador</label></div>
+        <div class="option-item"><input type="radio" name="q4" id="q4b" value="Gestor / Gerente"><label for="q4b">Gestor / Gerente</label></div>
+        <div class="option-item"><input type="radio" name="q4" id="q4c" value="Sócio"><label for="q4c">Sócio</label></div>
+        <div class="option-item"><input type="radio" name="q4" id="q4d" value="Outro"><label for="q4d">Outro</label></div>
+      </div>
+      <div class="field-error" id="err-q4">Selecione uma opção</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-next" onclick="nextBlock(0)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- BLOCO 2 -->
+  <div class="block" id="block-1">
+    <div class="block-label">Bloco 02</div>
+    <div class="block-title">Seu nível atual com I.A.</div>
+
+    <div class="question">
+      <label><span class="num">05</span> Como você se descreveria em relação à I.A. hoje?</label>
+      <div class="options">
+        <div class="option-item"><input type="radio" name="q5" id="q5a" value="Nunca usei"><label for="q5a">Nunca usei nenhuma ferramenta de I.A.</label></div>
+        <div class="option-item"><input type="radio" name="q5" id="q5b" value="Já testei mas não sei aplicar"><label for="q5b">Já testei, mas não sei aplicar no meu negócio</label></div>
+        <div class="option-item"><input type="radio" name="q5" id="q5c" value="Uso no dia a dia"><label for="q5c">Uso algumas ferramentas no dia a dia</label></div>
+        <div class="option-item"><input type="radio" name="q5" id="q5d" value="Já implementei mas quero evoluir"><label for="q5d">Já implementei algo, mas quero ir mais fundo</label></div>
+      </div>
+      <div class="field-error" id="err-q5">Selecione uma opção</div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">06</span> Quais ferramentas de I.A. você já usou? <em style="color:var(--muted);font-size:12px;">(pode marcar mais de uma)</em></label>
+      <div class="options grid">
+        <div class="option-item"><input type="checkbox" name="q6" id="q6a" value="ChatGPT"><label for="q6a">ChatGPT</label></div>
+        <div class="option-item"><input type="checkbox" name="q6" id="q6b" value="Gemini"><label for="q6b">Gemini</label></div>
+        <div class="option-item"><input type="checkbox" name="q6" id="q6c" value="Make / Zapier"><label for="q6c">Make / Zapier</label></div>
+        <div class="option-item"><input type="checkbox" name="q6" id="q6d" value="Midjourney / DALL-E"><label for="q6d">Midjourney / DALL-E</label></div>
+        <div class="option-item"><input type="checkbox" name="q6" id="q6e" value="Claude"><label for="q6e">Claude</label></div>
+        <div class="option-item"><input type="checkbox" name="q6" id="q6f" value="Nenhuma"><label for="q6f">Nenhuma</label></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">07</span> Você já tentou usar I.A. para algum processo do seu negócio? O que aconteceu?</label>
+      <textarea id="q7" placeholder="Conte brevemente — tentativas, frustrações, o que funcionou..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn-back" onclick="prevBlock(1)">← Voltar</button>
+      <button class="btn-next" onclick="nextBlock(1)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- BLOCO 3 -->
+  <div class="block" id="block-2">
+    <div class="block-label">Bloco 03</div>
+    <div class="block-title">O que você quer alcançar?</div>
+
+    <div class="question">
+      <label><span class="num">08</span> O que te fez investir nessa consultoria agora?</label>
+      <textarea id="q8" placeholder="Qual foi o gatilho? O que aconteceu que te trouxe até aqui?"></textarea>
+      <div class="field-error" id="err-q8">Preencha este campo</div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">09</span> Qual resultado concreto você quer ter ao final do mês?</label>
+      <textarea id="q9" placeholder="Seja específico — o que precisa ter acontecido para você dizer que valeu a pena?"></textarea>
+      <div class="field-error" id="err-q9">Preencha este campo</div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">10</span> Em quais áreas do seu negócio você mais quer aplicar I.A.? <em style="color:var(--muted);font-size:12px;">(pode marcar mais de uma)</em></label>
+      <div class="options grid">
+        <div class="option-item"><input type="checkbox" name="q10" id="q10a" value="Atendimento ao cliente"><label for="q10a">Atendimento ao cliente</label></div>
+        <div class="option-item"><input type="checkbox" name="q10" id="q10b" value="Vendas e prospecção"><label for="q10b">Vendas e prospecção</label></div>
+        <div class="option-item"><input type="checkbox" name="q10" id="q10c" value="Marketing e conteúdo"><label for="q10c">Marketing e conteúdo</label></div>
+        <div class="option-item"><input type="checkbox" name="q10" id="q10d" value="Processos internos"><label for="q10d">Processos internos</label></div>
+        <div class="option-item"><input type="checkbox" name="q10" id="q10e" value="Financeiro"><label for="q10e">Financeiro</label></div>
+        <div class="option-item"><input type="checkbox" name="q10" id="q10f" value="RH / Equipe"><label for="q10f">RH / Equipe</label></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">11</span> Se você pudesse resolver UMA coisa no seu negócio com I.A., qual seria?</label>
+      <textarea id="q11" placeholder="Essa é a sua prioridade número 1..."></textarea>
+      <div class="field-error" id="err-q11">Preencha este campo</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-back" onclick="prevBlock(2)">← Voltar</button>
+      <button class="btn-next" onclick="nextBlock(2)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- BLOCO 4 -->
+  <div class="block" id="block-3">
+    <div class="block-label">Bloco 04</div>
+    <div class="block-title">Perfil e comprometimento</div>
+
+    <div class="question">
+      <label><span class="num">12</span> Quantas horas por semana você consegue dedicar para aprender e implementar?</label>
+      <div class="options">
+        <div class="option-item"><input type="radio" name="q12" id="q12a" value="Menos de 2h"><label for="q12a">Menos de 2h — estou muito ocupado</label></div>
+        <div class="option-item"><input type="radio" name="q12" id="q12b" value="2 a 4h"><label for="q12b">2 a 4h por semana</label></div>
+        <div class="option-item"><input type="radio" name="q12" id="q12c" value="4 a 6h"><label for="q12c">4 a 6h por semana</label></div>
+        <div class="option-item"><input type="radio" name="q12" id="q12d" value="Mais de 6h"><label for="q12d">Mais de 6h — estou 100% comprometido</label></div>
+      </div>
+      <div class="field-error" id="err-q12">Selecione uma opção</div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">13</span> Você tem alguém na equipe para ajudar a implementar?</label>
+      <div class="options">
+        <div class="option-item"><input type="radio" name="q13" id="q13a" value="Tenho equipe"><label for="q13a">Sim, tenho equipe disponível</label></div>
+        <div class="option-item"><input type="radio" name="q13" id="q13b" value="Tenho 1 pessoa"><label for="q13b">Tenho 1 pessoa que pode ajudar</label></div>
+        <div class="option-item"><input type="radio" name="q13" id="q13c" value="Serei eu mesmo"><label for="q13c">Não, serei eu mesmo implementando</label></div>
+        <div class="option-item"><input type="radio" name="q13" id="q13d" value="Ainda não sei"><label for="q13d">Ainda não sei</label></div>
+      </div>
+      <div class="field-error" id="err-q13">Selecione uma opção</div>
+    </div>
+
+    <div class="question">
+      <label><span class="num">14</span> O que pode te impedir de aproveitar 100% essa consultoria?</label>
+      <textarea id="q14" placeholder="Seja honesto — tempo, equipe, dificuldade técnica..."></textarea>
+    </div>
+
+    <div class="question">
+      <label><span class="num">15</span> Em uma frase: por que agora?</label>
+      <input type="text" id="q15" placeholder="O que tornou esse momento o certo para você..." />
+      <div class="field-error" id="err-q15">Preencha este campo</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-back" onclick="prevBlock(3)">← Voltar</button>
+      <button class="btn-next" id="btnSubmit" onclick="submitForm()">Enviar ✓</button>
+    </div>
+    <div class="submit-error" id="submitError">Erro ao enviar. Tente novamente.</div>
+  </div>
+
+  <!-- Success -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✓</div>
+    <h2>Tudo certo!</h2>
+    <p>Recebemos suas respostas. Em breve entraremos em contato pelo WhatsApp para agendar sua primeira call.</p>
+  </div>
+
+</div>
+
+<script>
+  // Supabase init
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://errofscpxzcbhloutdpb.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVycm9mc2NweHpjYmhsb3V0ZHBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTM1OTIsImV4cCI6MjA5MDEyOTU5Mn0.KLrdir04-WdKkSUYqCZvFeyB36qb2MyBX60szAXfWLI'
+  );
+
+  const totalBlocks = 4;
+  let currentBlock = 0;
+
+  function initProgress() {
+    const steps = document.getElementById('progressSteps');
+    steps.innerHTML = '';
+    for (let i = 0; i < totalBlocks; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'step-dot';
+      dot.id = `dot-${i}`;
+      steps.appendChild(dot);
+    }
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const pct = (currentBlock / totalBlocks) * 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressText').textContent = `Bloco ${currentBlock + 1} de ${totalBlocks}`;
+    for (let i = 0; i < totalBlocks; i++) {
+      const dot = document.getElementById(`dot-${i}`);
+      dot.className = 'step-dot';
+      if (i < currentBlock) dot.classList.add('done');
+      if (i === currentBlock) dot.classList.add('active');
+    }
+  }
+
+  function showBlock(idx) {
+    document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+    const block = document.getElementById(`block-${idx}`);
+    if (block) block.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    updateProgress();
+  }
+
+  function validate(blockIdx) {
+    let valid = true;
+    const clearError = id => { const el = document.getElementById(id); if (el) el.classList.remove('show'); };
+    const showError  = id => { const el = document.getElementById(id); if (el) el.classList.add('show'); valid = false; };
+
+    if (blockIdx === 0) {
+      ['q1','q2','q3'].forEach(id => {
+        clearError(`err-${id}`);
+        if (!document.getElementById(id).value.trim()) showError(`err-${id}`);
+      });
+      clearError('err-q4');
+      if (!document.querySelector('input[name="q4"]:checked')) showError('err-q4');
+    }
+
+    if (blockIdx === 1) {
+      clearError('err-q5');
+      if (!document.querySelector('input[name="q5"]:checked')) showError('err-q5');
+    }
+
+    if (blockIdx === 2) {
+      ['q8','q9','q11'].forEach(id => {
+        clearError(`err-${id}`);
+        if (!document.getElementById(id).value.trim()) showError(`err-${id}`);
+      });
+    }
+
+    if (blockIdx === 3) {
+      clearError('err-q12');
+      if (!document.querySelector('input[name="q12"]:checked')) showError('err-q12');
+      clearError('err-q13');
+      if (!document.querySelector('input[name="q13"]:checked')) showError('err-q13');
+      clearError('err-q15');
+      if (!document.getElementById('q15').value.trim()) showError('err-q15');
+    }
+
+    return valid;
+  }
+
+  function nextBlock(current) {
+    if (!validate(current)) return;
+    currentBlock = current + 1;
+    showBlock(currentBlock);
+  }
+
+  function prevBlock(current) {
+    currentBlock = current - 1;
+    showBlock(currentBlock);
+  }
+
+  async function submitForm() {
+    if (!validate(3)) return;
+
+    const btn = document.getElementById('btnSubmit');
+    const errEl = document.getElementById('submitError');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    errEl.classList.remove('show');
+
+    const payload = {
+      nome:          document.getElementById('q1').value.trim(),
+      whatsapp:      document.getElementById('q2').value.trim(),
+      segmento:      document.getElementById('q3').value.trim(),
+      papel:         document.querySelector('input[name="q4"]:checked')?.value || '',
+      nivel_ia:      document.querySelector('input[name="q5"]:checked')?.value || '',
+      ferramentas:   [...document.querySelectorAll('input[name="q6"]:checked')].map(i => i.value),
+      tentativas_ia: document.getElementById('q7').value.trim(),
+      gatilho:       document.getElementById('q8').value.trim(),
+      resultado_esperado: document.getElementById('q9').value.trim(),
+      areas_interesse: [...document.querySelectorAll('input[name="q10"]:checked')].map(i => i.value),
+      prioridade:    document.getElementById('q11').value.trim(),
+      horas_semana:  document.querySelector('input[name="q12"]:checked')?.value || '',
+      equipe:        document.querySelector('input[name="q13"]:checked')?.value || '',
+      obstaculos:    document.getElementById('q14').value.trim(),
+      porque_agora:  document.getElementById('q15').value.trim(),
+    };
+
+    const { error } = await sb.from('consultoria_leads').insert([payload]);
+
+    if (error) {
+      console.error(error);
+      btn.disabled = false;
+      btn.textContent = 'Enviar ✓';
+      errEl.classList.add('show');
+      return;
+    }
+
+    // Success
+    document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+    document.querySelector('.progress-info').style.display = 'none';
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('successScreen').classList.add('show');
+  }
+
+  initProgress();
+</script>
+</body>
+</html>
