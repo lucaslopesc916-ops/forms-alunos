@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -561,6 +562,17 @@
       <div class="field-error" id="err-q15">Preencha este campo</div>
     </div>
 
+    <div class="question">
+      <label><span class="num">16</span> Como você está se sentindo em relação ao seu negócio agora?</label>
+      <div class="options">
+        <div class="option-item"><input type="radio" name="q16" id="q16a" value="Animado e com clareza"><label for="q16a">Animado e com clareza sobre o caminho</label></div>
+        <div class="option-item"><input type="radio" name="q16" id="q16b" value="Travado, sem saber o próximo passo"><label for="q16b">Travado, sem saber o próximo passo</label></div>
+        <div class="option-item"><input type="radio" name="q16" id="q16c" value="Sobrecarregado com a operação"><label for="q16c">Sobrecarregado com a operação</label></div>
+        <div class="option-item"><input type="radio" name="q16" id="q16d" value="Ansioso para crescer mas sem tempo"><label for="q16d">Ansioso para crescer, mas sem tempo</label></div>
+      </div>
+      <div class="field-error" id="err-q16">Selecione uma opção</div>
+    </div>
+
     <div class="actions">
       <button class="btn-back" onclick="prevBlock(3)">← Voltar</button>
       <button class="btn-next" id="btnSubmit" onclick="submitForm()">Enviar ✓</button>
@@ -653,6 +665,8 @@
       if (!document.querySelector('input[name="q13"]:checked')) showError('err-q13');
       clearError('err-q15');
       if (!document.getElementById('q15').value.trim()) showError('err-q15');
+      clearError('err-q16');
+      if (!document.querySelector('input[name="q16"]:checked')) showError('err-q16');
     }
 
     return valid;
@@ -694,6 +708,7 @@
       equipe:        document.querySelector('input[name="q13"]:checked')?.value || '',
       obstaculos:    document.getElementById('q14').value.trim(),
       porque_agora:  document.getElementById('q15').value.trim(),
+      estado_emocional: document.querySelector('input[name="q16"]:checked')?.value || '',
     };
 
     const { error } = await sb.from('consultoria_leads').insert([payload]);
